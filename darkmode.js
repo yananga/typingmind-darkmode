@@ -1,14 +1,14 @@
 /* 
-  TypingMind Tweaks V3.7 (Neon Mode)
-  - High Visibility Borders + Glow
+  TypingMind Tweaks V3.8 (Full Schematic Mode)
+  - Content Outlines (Messages, Input, Code)
   - "The Void" Black Theme
   - Robust Hiding & Safe Button
 */
 
 (function() {
-    console.log("🚀 V3.7 Neon Mode Starting...");
+    console.log("🚀 V3.8 Schematic Mode Starting...");
 
-    // --- 1. SETTINGS & CONFIG --- //
+    // --- CONFIG --- //
     const STORAGE_KEY = 'TM_TWEAKS_CONFIG';
     const DEFAULT_CONFIG = {
         hideTeams: true, hideKB: true, hideAudio: true, 
@@ -25,7 +25,7 @@
         updateStyles();
     }
 
-    // --- 2. CSS GENERATOR (High Vis) --- //
+    // --- CSS GENERATOR --- //
     function updateStyles() {
         const styleId = 'tm-tweaks-style';
         let style = document.getElementById(styleId);
@@ -35,18 +35,19 @@
             document.head.appendChild(style);
         }
 
-        // 60% Opacity for Borders (Visible but not solid)
+        // Colors
+        const themeC = config.themeColor;
         const borderAlpha = Math.floor(0.6 * 255).toString(16).padStart(2,'0'); 
         
         style.textContent = `
             /* --- MODAL --- */
             #tm-tweaks-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999999; justify-content:center; align-items:center; }
-            .tm-modal-content { background:#000; border:1px solid ${config.themeColor}; padding:20px; border-radius:12px; width:320px; color:#fff; font-family:sans-serif; box-shadow: 0 0 50px ${config.themeColor}40; }
+            .tm-modal-content { background:#000; border:1px solid ${themeC}; padding:20px; border-radius:12px; width:320px; color:#fff; font-family:sans-serif; box-shadow: 0 0 50px ${themeC}40; }
             .tm-header { display:flex; justify-content:space-between; margin-bottom:15px; align-items: center; }
             .tm-section { border-top:1px solid #333; padding:15px 0; display:flex; flex-direction:column; gap:8px; }
             .tm-color-row { display:flex; justify-content:space-between; align-items:center; }
             .tm-footer { margin-top:15px; text-align:right; }
-            #tm-save-close { background:${config.themeColor}; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
+            #tm-save-close { background:${themeC}; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
             #tm-close-btn { background:none; border:none; color:#666; font-size:24px; cursor:pointer; }
 
             /* --- HIDING --- */
@@ -71,47 +72,54 @@
                     background-color: #000000 !important;
                 }
 
-                /* 2. NEON BORDERS (The Fix) */
-                
-                /* Sidebar Ends (Right Line) */
+                /* 2. LAYOUT OUTLINES (Color Driven) */
                 [data-element-id="side-bar-body"], [data-element-id="side-bar-nav-rail"] { 
-                    border-right: 1px solid ${config.themeColor}${borderAlpha} !important; 
-                    box-shadow: 1px 0 10px -5px ${config.themeColor} !important; /* Right Glow */
+                    border-right: 1px solid ${themeC}${borderAlpha} !important; 
                 }
-                
-                /* Header (Bottom Line) */
                 header, [data-element-id="chat-space-header"] { 
-                    border-bottom: 1px solid ${config.themeColor}${borderAlpha} !important; 
-                    box-shadow: 0 1px 10px -5px ${config.themeColor} !important; /* Bottom Glow */
+                    border-bottom: 1px solid ${themeC}${borderAlpha} !important; 
                 }
+
+                /* 3. CONTENT OUTLINES (White/Grey Wireframe) */
                 
-                /* Input Area (Box) */
+                /* Input Area Box */
                 [data-element-id="chat-input-area"] { 
                     background-color: #000 !important; 
-                    border: 1px solid ${config.themeColor}${borderAlpha} !important; 
+                    border: 1px solid rgba(255,255,255,0.2) !important; /* White Outline */
                     border-radius: 8px !important;
-                    box-shadow: 0 0 15px -5px ${config.themeColor}40 !important; /* Box Glow */
+                    box-shadow: 0 0 15px -5px ${themeC}20 !important; 
+                }
+
+                /* AI Response Blocks */
+                [data-element-id="response-block"] {
+                    border: 1px solid rgba(255,255,255,0.1) !important; /* Faint Grey Box */
+                    border-radius: 8px !important;
+                    padding: 15px !important;
+                    margin-bottom: 20px !important;
+                }
+
+                /* User Message Bubbles */
+                [data-is-user="true"] .prose {
+                    border: 1px solid rgba(255,255,255,0.3) !important; /* Brighter Outline */
                 }
 
                 /* New Chat Button */
                 [data-element-id="new-chat-button-in-side-bar"] {
                     background: transparent !important;
-                    border: 1px solid ${config.themeColor} !important;
-                    color: ${config.themeColor} !important;
-                    box-shadow: 0 0 10px ${config.themeColor}40;
+                    border: 1px solid ${themeC} !important;
+                    color: ${themeC} !important;
                 }
             ` : ''}
         `;
     }
 
-    // --- 3. FLOATING BUTTON & MONITOR --- //
+    // --- MONITOR & BUTTON --- //
     function createMenuButton() {
         if (document.getElementById('tm-menu-btn')) return;
         const btn = document.createElement('button');
         btn.id = 'tm-menu-btn';
         btn.innerHTML = '⚙️';
         btn.onclick = () => { createModal(); document.getElementById('tm-tweaks-modal').style.display = 'flex'; };
-        /* Moved UP to 90px to avoid hiding */
         btn.style.cssText = `
             position: fixed; bottom: 90px; left: 16px; width: 32px; height: 32px;
             background: rgba(0,0,0,0.8); border: 1px solid ${config.themeColor}; border-radius: 50%;
@@ -128,7 +136,7 @@
         modal.id = 'tm-tweaks-modal';
         modal.innerHTML = `
             <div class="tm-modal-content">
-                <div class="tm-header"><h2>✨ Tweaks V3.7</h2><button id="tm-close-btn">×</button></div>
+                <div class="tm-header"><h2>✨ Tweaks V3.8</h2><button id="tm-close-btn">×</button></div>
                 <div class="tm-section">
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
                     <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
@@ -137,30 +145,24 @@
                     <label><input type="checkbox" id="chk-profile"> Hide Profile</label>
                 </div>
                 <div class="tm-section">
-                    <label><input type="checkbox" id="chk-border"> Enable "Neon Void" Theme</label>
-                    <div class="tm-color-row"><span>Outline</span><input type="color" id="col-theme"></div>
+                    <label><input type="checkbox" id="chk-border"> Enable "Schematic" Theme</label>
+                    <div class="tm-color-row"><span>Accent</span><input type="color" id="col-theme"></div>
                     <div class="tm-color-row"><span>Bubble</span><input type="color" id="col-user"></div>
                 </div>
                 <div class="tm-footer"><button id="tm-save-close">Save & Apply</button></div>
             </div>`;
         document.body.appendChild(modal);
-        // Bindings
+        
         const close = () => modal.style.display = 'none';
         document.getElementById('tm-close-btn').onclick = close;
         document.getElementById('tm-save-close').onclick = () => { saveConfig(); close(); };
         
-        // Load State
         const set = (id, val) => { const el = document.getElementById(id); if(el) el[id.includes('chk')?'checked':'value'] = val; };
-        set('chk-teams', config.hideTeams);
-        set('chk-kb', config.hideKB);
-        set('chk-prompts', config.hidePrompts);
-        set('chk-audio', config.hideAudio);
-        set('chk-profile', config.hideProfile);
-        set('chk-border', config.enableBorderTheme);
-        set('col-theme', config.themeColor);
-        set('col-user', config.userBubbleColor);
+        set('chk-teams', config.hideTeams); set('chk-kb', config.hideKB);
+        set('chk-prompts', config.hidePrompts); set('chk-audio', config.hideAudio);
+        set('chk-profile', config.hideProfile); set('chk-border', config.enableBorderTheme);
+        set('col-theme', config.themeColor); set('col-user', config.userBubbleColor);
 
-        // Listeners
         const updates = { 
             'chk-teams': 'hideTeams', 'chk-kb': 'hideKB', 'chk-prompts': 'hidePrompts',
             'chk-audio': 'hideAudio', 'chk-profile': 'hideProfile', 'chk-border': 'enableBorderTheme',
@@ -191,5 +193,5 @@
 
     updateStyles();
     setInterval(runMonitor, 800);
-    console.log("🚀 V3.7 Loaded");
+    console.log("🚀 V3.8 Loaded");
 })();
