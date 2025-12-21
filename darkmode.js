@@ -1,8 +1,7 @@
 /* 
-  TypingMind Tweaks V3 (The "VS Code" Theme)
-  - Settings Dashboard (Persistent)
-  - Cyberpunk/Border Aesthetics
-  - Element Hiding
+  TypingMind Tweaks V3.1 (Robust Edition)
+  - Fixed Sidebar Hiding for Rail Layout
+  - VS Code Theme
 */
 
 (function() {
@@ -14,12 +13,12 @@
         hideAudio: true,
         hidePrompts: true,
         hideProfile: false,
-        themeColor: '#3b82f6', // Default Blue
+        themeColor: '#3b82f6', 
         userBubbleColor: '#2563eb',
-        enableBorderTheme: true // The VS Code Look
+        enableBorderTheme: true
     };
 
-    // --- STATE MANAGEMENT --- //
+    // --- STATE --- //
     let config = JSON.parse(localStorage.getItem(STORAGE_KEY)) || DEFAULT_CONFIG;
 
     function saveConfig() {
@@ -27,55 +26,36 @@
         applyStyles();
     }
 
-    // --- UI CREATION --- //
+    // --- UI DASHBOARD (Same as before) --- //
     function createSettingsModal() {
         if (document.getElementById('tm-tweaks-modal')) return;
-
         const modal = document.createElement('div');
         modal.id = 'tm-tweaks-modal';
         modal.innerHTML = `
             <div class="tm-modal-content">
-                <div class="tm-header">
-                    <h2>✨ UI Tweaks</h2>
-                    <button id="tm-close-btn">×</button>
-                </div>
-                
+                <div class="tm-header"><h2>✨ UI Tweaks</h2><button id="tm-close-btn">×</button></div>
                 <div class="tm-section">
                     <h3>Visibility</h3>
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
-                    <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base (All)</label>
-                    <label><input type="checkbox" id="chk-audio"> Hide Audio Button</label>
+                    <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
+                    <label><input type="checkbox" id="chk-audio"> Hide Audio Input</label>
                     <label><input type="checkbox" id="chk-prompts"> Hide Prompt Library</label>
                     <label><input type="checkbox" id="chk-profile"> Hide User Profile</label>
                 </div>
-
                 <div class="tm-section">
-                    <h3>Aesthetics (VS Code Style)</h3>
+                    <h3>Aesthetics</h3>
                     <label><input type="checkbox" id="chk-border"> Enable "Border" Theme</label>
-                    
-                    <div class="tm-color-row">
-                        <span>New Chat / Border Color</span>
-                        <input type="color" id="col-theme">
-                    </div>
-                    <div class="tm-color-row">
-                        <span>User Message Bubble</span>
-                        <input type="color" id="col-user">
-                    </div>
+                    <div class="tm-color-row"><span>Border Color</span><input type="color" id="col-theme"></div>
+                    <div class="tm-color-row"><span>User Bubble</span><input type="color" id="col-user"></div>
                 </div>
-
-                <div class="tm-footer">
-                    <button id="tm-save-close">Done</button>
-                </div>
-            </div>
-        `;
+                <div class="tm-footer"><button id="tm-save-close">Done</button></div>
+            </div>`;
         document.body.appendChild(modal);
 
-        // Event Listeners
         const close = () => modal.style.display = 'none';
         document.getElementById('tm-close-btn').onclick = close;
         document.getElementById('tm-save-close').onclick = close;
-        
-        // Bind Inputs
+
         const bindChk = (id, key) => {
             const el = document.getElementById(id);
             el.checked = config[key];
@@ -98,27 +78,22 @@
     }
 
     function createMenuButton() {
-        // Wait for sidebar to load
         const interval = setInterval(() => {
             const sidebar = document.querySelector('[data-element-id="side-bar-body"]');
             if (sidebar && !document.getElementById('tm-menu-btn')) {
                 const btn = document.createElement('button');
                 btn.id = 'tm-menu-btn';
-                btn.innerHTML = '⚙️'; // Simple Gear Icon
-                btn.title = 'UI Tweaks';
-                btn.onclick = () => {
-                    createSettingsModal();
-                    document.getElementById('tm-tweaks-modal').style.display = 'flex';
-                };
-                
-                // Append to bottom of sidebar (usually usually near settings)
+                btn.innerHTML = '⚙️';
+                btn.onclick = () => { createSettingsModal(); document.getElementById('tm-tweaks-modal').style.display = 'flex'; };
+                // Styling the gear explicitly to be visible
+                btn.style.cssText = "position: absolute; bottom: 15px; right: 15px; font-size: 24px; background: none; border: none; cursor: pointer; z-index: 9999; filter: grayscale(1) brightness(1.5);";
                 sidebar.appendChild(btn);
                 clearInterval(interval);
             }
         }, 1000);
     }
 
-    // --- CSS INJECTION --- //
+    // --- SMART STYLES --- //
     function applyStyles() {
         let style = document.getElementById('tm-tweaks-style');
         if (!style) {
@@ -127,81 +102,60 @@
             document.head.appendChild(style);
         }
 
-        const borderThemeCSS = `
-            /* BORDER THEME (VS CODE STYLE) */
-            /* New Chat Button: Outline Only */
-            [data-element-id="new-chat-button-in-side-bar"] {
-                background-color: transparent !important;
-                border: 1px solid ${config.themeColor} !important;
-                color: ${config.themeColor} !important;
-            }
-            [data-element-id="new-chat-button-in-side-bar"]:hover {
-                background-color: ${config.themeColor}10 !important; /* 10% opacity fill */
-            }
-
-            /* Input Area: Dark box with border */
-            [data-element-id="chat-input-area"] {
-                background-color: #050505 !important;
-                border: 1px solid ${config.themeColor}40 !important; /* 40% opacity border */
-                border-radius: 6px !important;
-            }
-        `;
-
+        /* ROBUST SELECTORS: Matches partial text in links/buttons */
         const css = `
-            /* --- MODAL STYLES --- */
-            #tm-tweaks-modal {
-                display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.8); z-index: 99999;
-                justify-content: center; align-items: center;
-            }
-            .tm-modal-content {
-                background: #111; border: 1px solid #333; padding: 20px;
-                border-radius: 8px; width: 300px; color: #eee;
-                font-family: sans-serif;
-            }
-            .tm-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-            .tm-section { border-top: 1px solid #333; padding: 15px 0; display: flex; flex-direction: column; gap: 8px; }
-            .tm-section h3 { margin: 0 0 10px 0; font-size: 14px; opacity: 0.7; }
-            .tm-footer { margin-top: 15px; text-align: right; }
-            #tm-menu-btn {
-                position: absolute; bottom: 20px; right: 20px; /* Floating in sidebar */
-                background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.5;
-                z-index: 100;
-            }
-            #tm-menu-btn:hover { opacity: 1; }
-            .tm-color-row { display: flex; justify-content: space-between; align-items: center; }
-
-            /* --- CORE STYLES --- */
-            /* User Bubbles */
-            .prose.bg-blue-600, .bg-blue-600, .bg-blue-500 {
-                background-color: ${config.userBubbleColor} !important;
-            }
+            #tm-tweaks-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; }
+            .tm-modal-content { background:#111; border:1px solid #333; padding:20px; border-radius:8px; width:300px; color:#eee; font-family:sans-serif; }
+            .tm-header { display:flex; justify-content:space-between; margin-bottom:20px; }
+            .tm-section { border-top:1px solid #333; padding:15px 0; display:flex; flex-direction:column; gap:8px; }
+            .tm-color-row { display:flex; justify-content:space-between; }
+            .tm-footer { margin-top:15px; text-align:right; }
 
             /* True Black Backgrounds */
-            html.dark body, html.dark main, 
-            html.dark [data-element-id="chat-space-middle-part"],
-            html.dark [data-element-id="side-bar-body"],
-            html.dark [data-element-id="response-block"] {
+            html.dark body, html.dark main, html.dark [data-element-id="chat-space-middle-part"], 
+            html.dark [data-element-id="side-bar-body"], html.dark [data-element-id="response-block"] {
                 background-color: #030303 !important;
             }
 
-            /* --- HIDING ELEMENTS --- */
-            ${config.hideTeams ? '[data-element-id="workspace-tab-teams"] { display: none !important; }' : ''}
-            ${config.hideKB ? '[data-element-id="workspace-tab-knowledge-base"], [data-element-id="toggle-kb-button"] { display: none !important; }' : ''}
-            ${config.hideAudio ? '[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }' : ''}
-            /* Hiding Prompt Library (The List More button) */
-            ${config.hidePrompts ? '.group\\/prompt-library-button, [data-element-id="prompt-library-button"] { display: none !important; }' : ''}
+            /* --- HIDING (Using Attribute Selectors) --- */
+            /* Teams */
+            ${config.hideTeams ? `[href*="/teams"], [aria-label*="Team"], button:has(span:contains("Teams")) { display: none !important; }` : ''}
+            
+            /* Knowledge Base (Matches any link/button with KB or Knowledge Base in text/label) */
+            ${config.hideKB ? `
+                [data-element-id*="knowledge-base"],
+                [aria-label*="Knowledge Base"],
+                a[href*="/knowledge-base"],
+                button:has(svg):has(span:contains("KB")) 
+                { display: none !important; }
+            ` : ''}
+
+            /* Prompts */
+            ${config.hidePrompts ? `
+                [data-element-id*="prompt"], 
+                [aria-label*="Prompt"],
+                a[href*="/prompts"]
+                { display: none !important; }
+            ` : ''}
+
+            /* Hide User Profile */
             ${config.hideProfile ? '[data-element-id="workspace-profile-button"] { display: none !important; }' : ''}
 
-            /* --- CONDITIONAL THEME --- */
-            ${config.enableBorderTheme ? borderThemeCSS : ''}
-        `;
+            /* Hide Audio */
+            ${config.hideAudio ? '[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }' : ''}
 
+            /* --- THEME --- */
+            .prose.bg-blue-600 { background-color: ${config.userBubbleColor} !important; }
+            
+            ${config.enableBorderTheme ? `
+                [data-element-id="new-chat-button-in-side-bar"] { background: transparent !important; border: 1px solid ${config.themeColor} !important; color: ${config.themeColor} !important; }
+                [data-element-id="chat-input-area"] { background: #050505 !important; border: 1px solid ${config.themeColor}40 !important; border-radius: 6px; }
+            ` : ''}
+        `;
         style.textContent = css;
     }
 
-    // --- INITIALIZATION --- //
     createMenuButton();
     applyStyles();
-    console.log("🚀 TypingMind V3 (VS Code Theme) Loaded");
+    console.log("🚀 TypingMind V3.1 Loaded");
 })();
