@@ -1,14 +1,13 @@
 /* 
-  TypingMind Tweaks V3.3 (Live Monitor Edition)
-  - MutationObserver for Robust Hiding
-  - Auto-Reinjecting Sidebar Button
-  - "All Black + Outlines" Theme
+  TypingMind Tweaks V3.4 (Rail Edition)
+  - Button inside Sidebar Rail (Native Look)
+  - "Void" Theme (Black + Outlines)
+  - Robust Element Hiding
 */
 
 (function() {
-    console.log("🚀 V3.3 Monitor Starting...");
+    console.log("🚀 V3.4 Rail Edition Starting...");
 
-    // --- CONFIG --- //
     const STORAGE_KEY = 'TM_TWEAKS_CONFIG';
     const DEFAULT_CONFIG = {
         hideTeams: true,
@@ -24,11 +23,11 @@
 
     function saveConfig() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-        applyStyles(); // Re-run styles
-        runLiveChecks(); // Re-run hiding logic
+        applyStyles();
+        runMonitor();
     }
 
-    // --- UI: SETTINGS MODAL --- //
+    // --- UI MODAL (Same as before) --- //
     function createSettingsModal() {
         if (document.getElementById('tm-tweaks-modal')) return;
         const modal = document.createElement('div');
@@ -38,17 +37,17 @@
                 <div class="tm-header"><h2>✨ UI Tweaks</h2><button id="tm-close-btn">×</button></div>
                 
                 <div class="tm-section">
-                    <h3>Visibility (Live)</h3>
+                    <h3>Visibility</h3>
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
                     <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
-                    <label><input type="checkbox" id="chk-prompts"> Hide Prompt Library</label>
+                    <label><input type="checkbox" id="chk-prompts"> Hide Prompt Library (List More)</label>
                     <label><input type="checkbox" id="chk-audio"> Hide Audio Button</label>
                     <label><input type="checkbox" id="chk-profile"> Hide Profile</label>
                 </div>
 
                 <div class="tm-section">
-                    <h3>The "Outline" Theme</h3>
-                    <div class="tm-col-opt"><label><input type="checkbox" id="chk-border"> Enable All Low-Light + Outlines</label></div>
+                    <h3>The "Void" Theme</h3>
+                    <div class="tm-col-opt"><label><input type="checkbox" id="chk-border"> Enable Black + Outlines</label></div>
                     <div class="tm-color-row"><span>Outline Color</span><input type="color" id="col-theme"></div>
                     <div class="tm-color-row"><span>User Bubble</span><input type="color" id="col-user"></div>
                 </div>
@@ -56,7 +55,6 @@
             </div>`;
         document.body.appendChild(modal);
 
-        // Logic
         const close = () => modal.style.display = 'none';
         document.getElementById('tm-close-btn').onclick = close;
         document.getElementById('tm-save-close').onclick = close;
@@ -82,51 +80,84 @@
         bindCol('col-user', 'userBubbleColor');
     }
 
-    // --- LOGIC: THE LIVE MONITOR --- //
-    function runLiveChecks() {
-        // 1. Re-Inject Menu Button if missing (but sidebar exists)
-        const sidebar = document.querySelector('[data-element-id="side-bar-body"]');
-        const existingBtn = document.getElementById('tm-menu-btn');
-        
-        if (sidebar && !existingBtn) {
-            const btn = document.createElement('button');
-            btn.id = 'tm-menu-btn';
-            btn.innerHTML = '⚙️';
-            btn.title = 'UI Tweaks';
-            btn.onclick = () => { createSettingsModal(); document.getElementById('tm-tweaks-modal').style.display = 'flex'; };
-            // Style it to look integrated but float safely
-            btn.style.cssText = `
-                position: absolute; bottom: 10px; right: 10px;
-                background: none; border: none; font-size: 20px; 
-                cursor: pointer; opacity: 0.6; z-index: 50; 
-                filter: grayscale(100%) brightness(200%);
-            `;
-            sidebar.appendChild(btn); 
-        }
+    // --- THE RAIL INJECTOR --- //
+    function injectRailButton() {
+        if (document.getElementById('tm-rail-btn')) return;
 
-        // 2. Hide Elements (by Text Content - Very Robust)
-        if (config.hideTeams) hideByText('Teams');
-        if (config.hideKB) { hideByText('Knowledge Base'); hideByText('KB'); }
-        if (config.hidePrompts) { hideByText('Prompts'); }
+        // Strategy: Find the "Settings" button in the Rail
+        // It usually has "Settings" text or a specific icon, but let's look for "Settings" aria-label or text
+        const settingsBtn = findElementByText('Settings', 'div, a, button');
+        
+        if (settingsBtn) {
+            // Found it! Get its container (the Rail item wrapper)
+            const railItem = settingsBtn.closest('div'); 
+            if (railItem && railItem.parentElement) {
+                // Create our button wrapper looking like a rail item
+                const btnContainer = document.createElement('div');
+                btnContainer.className = railItem.className; // Steal the class to look native
+                btnContainer.style.cursor = 'pointer';
+                btnContainer.style.display = 'flex';
+                btnContainer.style.justifyContent = 'center';
+                btnContainer.style.padding = '8px 0';
+
+                const btn = document.createElement('button');
+                btn.id = 'tm-rail-btn';
+                // Using a gear SVG or emoji
+                btn.innerHTML = '⚙️'; 
+                btn.style.fontSize = '20px';
+                btn.style.background = 'transparent';
+                btn.style.border = 'none';
+                btn.style.opacity = '0.7';
+                
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    createSettingsModal(); 
+                    document.getElementById('tm-tweaks-modal').style.display = 'flex';
+                };
+
+                btnContainer.appendChild(btn);
+                
+                // Insert BEFORE the Settings button
+                railItem.parentElement.insertBefore(btnContainer, railItem);
+                console.log("✅ Tweaks Button Injected into Rail");
+                return;
+            }
+        }
     }
 
-    // Helper to find and hide buttons/links by text
+    // --- ELEMENT HIDER (Scanner) --- //
+    function runMonitor() {
+        injectRailButton();
+
+        if (config.hideTeams) hideByText('Teams');
+        if (config.hideKB) { hideByText('Knowledge Base'); hideByText('KB'); }
+        if (config.hidePrompts) { 
+            hideByText('List more'); // The stubbon one
+            hideByText('Prompts'); 
+        }
+    }
+
+    function findElementByText(text, selector = '*') {
+        const snapshot = document.evaluate(
+            `//${selector}[contains(text(), '${text}')] | //${selector}[@aria-label='${text}']`,
+            document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+        );
+        return snapshot.singleNodeValue;
+    }
+
     function hideByText(text) {
-        // Xpath to find element containing text
         const snapshot = document.evaluate(
             `//*[contains(text(), '${text}')]`,
             document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null
         );
-        
         for (let i = 0; i < snapshot.snapshotLength; i++) {
             const node = snapshot.snapshotItem(i);
-            // Walk up to find the clickable container (button or a)
-            const container = node.closest('button, a, [role="button"]');
+            const container = node.closest('button, a, [role="button"], .group');
             if (container) container.style.display = 'none';
         }
     }
 
-    // --- CSS STYLES --- //
+    // --- CSS THEME --- //
     function applyStyles() {
         let style = document.getElementById('tm-tweaks-style');
         if (!style) {
@@ -135,55 +166,49 @@
             document.head.appendChild(style);
         }
 
+        const borderAlpha = Math.floor(0.4 * 255).toString(16).padStart(2,'0'); // 40% opacity hex
         const css = `
             #tm-tweaks-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; }
-            .tm-modal-content { background:#0a0a0a; border:1px solid #333; padding:20px; border-radius:8px; width:300px; color:#fff; font-family:sans-serif; }
-            .tm-header { display:flex; justify-content:space-between; margin-bottom:15px; }
-            .tm-section { border-top:1px solid #333; padding:15px 0; display:flex; flex-direction:column; gap:8px; }
-            .tm-color-row { display:flex; justify-content:space-between; align-items:center; }
-            .tm-footer { margin-top:15px; text-align:right; }
-
-            /* Audio Button (Hard Select) */
+            .tm-modal-content { background:#000; border:1px solid ${config.themeColor}; padding:20px; border-radius:8px; width:300px; color:#fff; font-family:sans-serif; }
+            /* Audio & Profile Hard Hides */
             ${config.hideAudio ? `[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }` : ''}
-            
-            /* Profile */
             ${config.hideProfile ? `[data-element-id="workspace-profile-button"] { display: none !important; }` : ''}
 
-            /* --- THEME LOGIC --- */
-            /* Force User Bubble Color */
-            [data-is-user="true"] .prose, 
-            .bg-blue-600, .bg-blue-500 { 
-                background-color: ${config.userBubbleColor} !important; 
-            }
+            /* User Color */
+            [data-is-user="true"] .prose, .bg-blue-600 { background-color: ${config.userBubbleColor} !important; }
 
             ${config.enableBorderTheme ? `
-                /* ALL BLACK BACKGROUNDS */
+                /* THE VOID THEME */
                 html.dark body, html.dark main, 
                 html.dark [data-element-id="side-bar-body"],
+                html.dark [data-element-id="side-bar-nav-rail"],
                 html.dark [data-element-id="chat-space-middle-part"],
-                html.dark [data-element-id="response-block"] {
+                html.dark [data-element-id="response-block"],
+                html.dark header {
                     background-color: #000000 !important;
                 }
 
                 /* OUTLINES */
-                /* Sidebar: Right Border */
-                [data-element-id="side-bar-body"] {
-                    border-right: 1px solid ${config.themeColor}33 !important; /* 33 = 20% opacity */
+                /* 1. Sidebar Rail */
+                [data-element-id="side-bar-nav-rail"] {
+                    border-right: 1px solid ${config.themeColor}${borderAlpha} !important;
                 }
-
-                /* Header: Bottom Border */
+                /* 2. Chat Area Header */
                 header, [data-element-id="chat-space-header"] {
-                    border-bottom: 1px solid ${config.themeColor}33 !important;
+                    border-bottom: 1px solid ${config.themeColor}${borderAlpha} !important;
                 }
-
-                /* Input: Box Border */
+                /* 3. Input Area */
                 [data-element-id="chat-input-area"] {
-                    background-color: #000000 !important;
-                    border: 1px solid ${config.themeColor}66 !important; /* 66 = 40% opacity */
+                    background-color: #000 !important;
+                    border: 1px solid ${config.themeColor}${borderAlpha} !important;
                     border-radius: 8px !important;
                 }
-
-                /* New Chat Button: Outline */
+                /* 4. Response Blocks (AI) */
+                [data-element-id="response-block"] {
+                    border-left: 1px solid ${config.themeColor}22 !important; /* Very faint left line */
+                }
+                
+                /* New Chat Button */
                 [data-element-id="new-chat-button-in-side-bar"] {
                     background: transparent !important;
                     border: 1px solid ${config.themeColor} !important;
@@ -194,13 +219,8 @@
         style.textContent = css;
     }
 
-    // --- START THE MONITOR --- //
+    // --- START --- //
     applyStyles();
-    
-    // Check every 500ms for changes (Sidebar reload, new elements)
-    setInterval(() => {
-        runLiveChecks();
-    }, 500);
-
-    console.log("🚀 V3.3 Alive");
+    setInterval(runMonitor, 800); // Check every 0.8s
+    console.log("🚀 V3.4 Loaded");
 })();
