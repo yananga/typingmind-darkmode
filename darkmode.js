@@ -1,42 +1,48 @@
 /* 
-  TypingMind Ultimate Dark Mode + UI Tweaks
-  Merged & Customized
+  TypingMind Ultimate Tweaks v2
+  - True Black Answers
+  - Custom UI Hiding
+  - Custom Colors
 */
 
 (function() {
     // --- ⚙️ CONFIGURATION ⚙️ --- //
     const CONFIG = {
-        // Colors
-        newChatButtonColor: '#2563eb', // Change this hex code (e.g. #ff0000 for red)
+        // Color Settings
+        newChatButtonColor: '#2563eb', // Your Blue
         
-        // Hiding Feature (Set to true/false)
+        // Hiding Features (Set to true/false)
         hideTeams: true,
-        hideKnowledgeBase: true,    // Hides both the Sidebar Tab and the Toggle Button
-        hideLogo: true,             // Hides the "TypingMind" logo in sidebar
-        hideProfile: true,          // Hides the User Profile button
-        hidePinnedCharacters: true, // Hides the characters list in new chat
+        hideKnowledgeBase: true,
+        hideLogo: true,
+        hideProfile: true,
+        hidePinnedCharacters: true,
+        
+        // NEW Features
+        hideAudioMessageButton: true,   // Hides the microphone icon in input
+        hideDefaultPrompts: true,       // Hides the "Suggestions" list in empty chat
     };
 
-    // --- 🔧 THE LOGIC (Do not edit below) --- //
+    // --- 🔧 THE LOGIC --- //
     const css = `
-        /* --- 1. TRUE DARK MODE --- */
-        html.dark body, html.dark main, 
-        html.dark [data-element-id="chat-space-middle-part"],
-        html.dark [data-element-id="side-bar-body"],
+        /* --- 1. TRUE BLACK ANSWERS ONLY --- */
+        /* Only target the AI response block */
         html.dark [data-element-id="response-block"],
         html.dark .prose {
             background-color: #000000 !important;
         }
+        
+        /* Optional: Keep Input Area Darker if you like, or delete this block to match page grey */
         html.dark [data-element-id="chat-input-area"] {
-            background-color: #000000 !important;
-            border-top: 1px solid #222 !important;
+            background-color: #000000 !important; 
+            border-top: 1px solid #333 !important;
         }
 
         /* --- 2. UI TWEAKS --- */
         /* Hide Teams */
         ${CONFIG.hideTeams ? '[data-element-id="workspace-tab-teams"] { display: none !important; }' : ''}
         
-        /* Hide Knowledge Base (Sidebar + Toggle) */
+        /* Hide Knowledge Base */
         ${CONFIG.hideKnowledgeBase ? `
             [data-element-id="workspace-tab-knowledge-base"],
             [data-element-id="toggle-kb-button"] { display: none !important; }
@@ -51,6 +57,18 @@
         /* Hide Pinned Characters */
         ${CONFIG.hidePinnedCharacters ? '[data-element-id="pinned-characters-container"] { display: none !important; }' : ''}
 
+        /* Hide Audio Button */
+        ${CONFIG.hideAudioMessageButton ? `
+            [data-element-id="voice-input-button"],
+            button[aria-label="Voice Input"] { display: none !important; }
+        ` : ''}
+
+        /* Hide Default Prompts (Suggestions) */
+        ${CONFIG.hideDefaultPrompts ? `
+            [data-element-id="chat-suggestions"], 
+            [data-element-id="empty-chat-suggestions-container"] { display: none !important; }
+        ` : ''}
+
         /* Custom New Chat Button Color */
         [data-element-id="new-chat-button-in-side-bar"] {
             background-color: ${CONFIG.newChatButtonColor} !important;
@@ -62,5 +80,5 @@
     style.appendChild(document.createTextNode(css));
     document.head.appendChild(style);
     
-    console.log("🚀 TypingMind Ultimate Tweaks Loaded");
+    console.log("🚀 TypingMind Tweaks v2 Loaded");
 })();
