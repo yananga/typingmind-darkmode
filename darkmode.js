@@ -1,11 +1,13 @@
 /* 
-  TypingMind Tweaks V3.1 (Robust Edition)
-  - Fixed Sidebar Hiding for Rail Layout
-  - VS Code Theme
+  TypingMind Tweaks V3.2 (The Failsafe Edition)
+  - Fixed Position Menu Button (Guaranteed Visibility)
+  - Aggressive Hiding
 */
 
 (function() {
-    // --- CONSTANTS --- //
+    console.log("🚀 V3.2 Starting...");
+
+    // --- CONFIG & STATE --- //
     const STORAGE_KEY = 'TM_TWEAKS_V3_CONFIG';
     const DEFAULT_CONFIG = {
         hideTeams: true,
@@ -17,8 +19,6 @@
         userBubbleColor: '#2563eb',
         enableBorderTheme: true
     };
-
-    // --- STATE --- //
     let config = JSON.parse(localStorage.getItem(STORAGE_KEY)) || DEFAULT_CONFIG;
 
     function saveConfig() {
@@ -26,7 +26,7 @@
         applyStyles();
     }
 
-    // --- UI DASHBOARD (Same as before) --- //
+    // --- DASHBOARD UI --- //
     function createSettingsModal() {
         if (document.getElementById('tm-tweaks-modal')) return;
         const modal = document.createElement('div');
@@ -44,11 +44,11 @@
                 </div>
                 <div class="tm-section">
                     <h3>Aesthetics</h3>
-                    <label><input type="checkbox" id="chk-border"> Enable "Border" Theme</label>
-                    <div class="tm-color-row"><span>Border Color</span><input type="color" id="col-theme"></div>
+                    <div class="tm-col-opt"><label><input type="checkbox" id="chk-border"> Enable Border Theme</label></div>
+                    <div class="tm-color-row"><span>Theme Color</span><input type="color" id="col-theme"></div>
                     <div class="tm-color-row"><span>User Bubble</span><input type="color" id="col-user"></div>
                 </div>
-                <div class="tm-footer"><button id="tm-save-close">Done</button></div>
+                <div class="tm-footer"><button id="tm-save-close">Close</button></div>
             </div>`;
         document.body.appendChild(modal);
 
@@ -77,23 +77,35 @@
         bindCol('col-user', 'userBubbleColor');
     }
 
+    // --- BUTTON CREATION (FAILSAFE) --- //
     function createMenuButton() {
-        const interval = setInterval(() => {
-            const sidebar = document.querySelector('[data-element-id="side-bar-body"]');
-            if (sidebar && !document.getElementById('tm-menu-btn')) {
-                const btn = document.createElement('button');
-                btn.id = 'tm-menu-btn';
-                btn.innerHTML = '⚙️';
-                btn.onclick = () => { createSettingsModal(); document.getElementById('tm-tweaks-modal').style.display = 'flex'; };
-                // Styling the gear explicitly to be visible
-                btn.style.cssText = "position: absolute; bottom: 15px; right: 15px; font-size: 24px; background: none; border: none; cursor: pointer; z-index: 9999; filter: grayscale(1) brightness(1.5);";
-                sidebar.appendChild(btn);
-                clearInterval(interval);
-            }
-        }, 1000);
+        if (document.getElementById('tm-menu-btn')) return;
+        
+        const btn = document.createElement('button');
+        btn.id = 'tm-menu-btn';
+        btn.innerHTML = '⚙️';
+        btn.onclick = () => { createSettingsModal(); document.getElementById('tm-tweaks-modal').style.display = 'flex'; };
+        
+        // FIXED POSITIONING: Will appear regardless of sidebar
+        btn.style.cssText = `
+            position: fixed; 
+            bottom: 20px; 
+            left: 20px; 
+            width: 40px; 
+            height: 40px;
+            background: #111; 
+            border: 1px solid #333; 
+            border-radius: 50%;
+            cursor: pointer; 
+            z-index: 999999; 
+            font-size: 20px;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        `;
+        document.body.appendChild(btn);
     }
 
-    // --- SMART STYLES --- //
+    // --- STYLES --- //
     function applyStyles() {
         let style = document.getElementById('tm-tweaks-style');
         if (!style) {
@@ -102,60 +114,51 @@
             document.head.appendChild(style);
         }
 
-        /* ROBUST SELECTORS: Matches partial text in links/buttons */
         const css = `
-            #tm-tweaks-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:99999; justify-content:center; align-items:center; }
-            .tm-modal-content { background:#111; border:1px solid #333; padding:20px; border-radius:8px; width:300px; color:#eee; font-family:sans-serif; }
-            .tm-header { display:flex; justify-content:space-between; margin-bottom:20px; }
-            .tm-section { border-top:1px solid #333; padding:15px 0; display:flex; flex-direction:column; gap:8px; }
-            .tm-color-row { display:flex; justify-content:space-between; }
-            .tm-footer { margin-top:15px; text-align:right; }
+            /* MODAL CSS */
+            #tm-tweaks-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; }
+            .tm-modal-content { background:#0a0a0a; border:1px solid #333; padding:20px; border-radius:8px; width:300px; color:#eee; font-family:sans-serif; }
+            .tm-header { display:flex; justify-content:space-between; margin-bottom:15px; }
+            .tm-section { border-top:1px solid #333; padding:15px 0; display:flex; flex-direction:column; gap:10px; }
+            .tm-color-row { display:flex; justify-content:space-between; align-items:center; }
 
-            /* True Black Backgrounds */
-            html.dark body, html.dark main, html.dark [data-element-id="chat-space-middle-part"], 
-            html.dark [data-element-id="side-bar-body"], html.dark [data-element-id="response-block"] {
-                background-color: #030303 !important;
-            }
+            /* --- ELEMENT HIDING --- */
+            /* Teams: Targets link by href */
+            ${config.hideTeams ? `a[href*="/teams"], [aria-label="Teams"] { display: none !important; }` : ''}
 
-            /* --- HIDING (Using Attribute Selectors) --- */
-            /* Teams */
-            ${config.hideTeams ? `[href*="/teams"], [aria-label*="Team"], button:has(span:contains("Teams")) { display: none !important; }` : ''}
-            
-            /* Knowledge Base (Matches any link/button with KB or Knowledge Base in text/label) */
+            /* KB: Targets by known IDs and text */
             ${config.hideKB ? `
-                [data-element-id*="knowledge-base"],
-                [aria-label*="Knowledge Base"],
-                a[href*="/knowledge-base"],
-                button:has(svg):has(span:contains("KB")) 
-                { display: none !important; }
+               [data-element-id*="knowledge-base"],
+               [aria-label="Knowledge Base"],
+               a[href*="/knowledge-base"] 
+               { display: none !important; }
             ` : ''}
 
-            /* Prompts */
-            ${config.hidePrompts ? `
-                [data-element-id*="prompt"], 
-                [aria-label*="Prompt"],
-                a[href*="/prompts"]
-                { display: none !important; }
-            ` : ''}
+            /* Prompts: Targets href */
+            ${config.hidePrompts ? `a[href*="/prompts"], [data-element-id*="prompt"] { display: none !important; }` : ''}
 
-            /* Hide User Profile */
-            ${config.hideProfile ? '[data-element-id="workspace-profile-button"] { display: none !important; }' : ''}
+            /* Audio Button */
+            ${config.hideAudio ? `[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }` : ''}
 
-            /* Hide Audio */
-            ${config.hideAudio ? '[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }' : ''}
+            /* Profile */
+            ${config.hideProfile ? `[data-element-id="workspace-profile-button"] { display: none !important; }` : ''}
 
             /* --- THEME --- */
+            html.dark body, html.dark main, html.dark [data-element-id="response-block"] {
+                background-color: #030303 !important;
+            }
             .prose.bg-blue-600 { background-color: ${config.userBubbleColor} !important; }
-            
+
             ${config.enableBorderTheme ? `
+                [data-element-id="chat-input-area"] { background: #050505 !important; border: 1px solid ${config.themeColor}50 !important; }
                 [data-element-id="new-chat-button-in-side-bar"] { background: transparent !important; border: 1px solid ${config.themeColor} !important; color: ${config.themeColor} !important; }
-                [data-element-id="chat-input-area"] { background: #050505 !important; border: 1px solid ${config.themeColor}40 !important; border-radius: 6px; }
             ` : ''}
         `;
         style.textContent = css;
     }
 
+    // Run immediately
     createMenuButton();
     applyStyles();
-    console.log("🚀 TypingMind V3.1 Loaded");
+    console.log("🚀 V3.2 Loaded");
 })();
