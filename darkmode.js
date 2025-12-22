@@ -1,13 +1,13 @@
 /* 
-  TypingMind Tweaks V3.10 (Final Polish)
-  - Solid "New Chat" Button (Matches Bubbles)
-  - Reliable Sidebar Button (Injects below Settings)
+  TypingMind Tweaks V3.11 (Precision Mode)
+  - Fixed "Disappearing Sidebar" Bug
+  - Solid "New Chat" Button
+  - Native Settings Injection
   - "Schematic" Outlines
-  - Clean Start
 */
 
 (function() {
-    console.log("🚀 V3.10 Final Polish Starting...");
+    console.log("🚀 V3.11 Precision Starting...");
 
     // --- CONFIG --- //
     const STORAGE_KEY = 'TM_TWEAKS_CONFIG';
@@ -104,57 +104,65 @@
         `;
     }
 
-    // --- BUTTON INJECTION (Targeted) --- //
+    // --- BUTTON INJECTION --- //
     function updateRailButton() {
-        // Prevent duplicates
         if (document.getElementById('tm-integrated-btn')) return;
 
-        // Strategy: Find the "Settings" button 
-        // We look for any element containing "Settings" text (hidden usually) or aria-label
+        // Try to find Settings to anchor
+        // We look for text OR typical aria labels
         const settingsBtn = findElementByText('Settings') || findElementByText('Preferences');
         
-        if (settingsBtn) {
-            // Found it! We want to insert AFTER its container
-            // The button itself might be deep inside a div, so walk up to the rail item
-            // The rail item usually has 'group' class or is a direct child of the nav
-            const railItem = settingsBtn.closest('.group') || settingsBtn.parentElement;
-            
-            if (railItem && railItem.parentElement) {
-                // Create our button
-                const wrapper = document.createElement('div');
-                wrapper.className = railItem.className + ' mt-2'; // Add spacing
-                wrapper.id = 'tm-integrated-btn';
-                wrapper.style.display = 'flex';
-                wrapper.style.justifyContent = 'center';
-                wrapper.style.cursor = 'pointer';
-                
-                const btn = document.createElement('button');
-                btn.innerHTML = '⚙️'; 
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    createModal();
-                    document.getElementById('tm-tweaks-modal').style.display = 'flex';
-                };
-                // Steal styles from sibling if possible, else default
-                btn.className = 'text-gray-400 hover:text-white transition-colors';
-                btn.style.fontSize = '20px';
-                btn.style.background = 'transparent';
-                btn.style.border = 'none';
+        let targetParent = null;
+        let insertBefore = false;
 
-                wrapper.appendChild(btn);
-                
-                // INSERT AFTER SETTINGS
-                railItem.parentElement.insertBefore(wrapper, railItem.nextSibling);
-                console.log("✅ Button Injected Below Settings");
+        if (settingsBtn) {
+            // Anchor after settings
+            targetParent = settingsBtn.closest('div.group') || settingsBtn.parentElement;
+        } 
+        
+        if (!targetParent) {
+            // Fallback: Use the profile button
+            const profile = document.querySelector('[data-element-id="workspace-profile-button"]');
+            if (profile) {
+                targetParent = profile.closest('div') || profile.parentElement;
+                insertBefore = true; // Put BEFORE profile if we can't find settings
             }
-        } else {
-            // Fallback: Just dump it in the rail if found
-            const rail = document.querySelector('[data-element-id="side-bar-nav-rail"]');
-            if(rail) {
-                const wrapper = document.createElement('div');
-                wrapper.id = 'tm-integrated-btn';
-                wrapper.innerHTML = '<button style="font-size:20px; color:#888; background:none; border:none; padding:10px;">⚙️</button>';
-                wrapper.onclick = () => {createModal(); document.getElementById('tm-tweaks-modal').style.display='flex';};
+        }
+
+        // Final Fallback: The Rail itself
+        const rail = document.querySelector('[data-element-id="side-bar-nav-rail"]');
+
+        // Create Button
+        const wrapper = document.createElement('div');
+        wrapper.id = 'tm-integrated-btn';
+        wrapper.className = 'flex items-center justify-center py-2 mt-1 cursor-pointer group';
+        
+        const btn = document.createElement('button');
+        btn.innerHTML = '⚙️'; 
+        btn.className = 'text-gray-400 hover:text-white transition-colors';
+        btn.style.cssText = 'background:none; border:none; font-size:20px; opacity:0.8;';
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            createModal();
+            document.getElementById('tm-tweaks-modal').style.display = 'flex';
+        };
+        wrapper.appendChild(btn);
+
+        // Inject
+        if (targetParent && targetParent.parentElement && !rail) {
+            // We found a specific item (Settings), insert relative to it
+            // NOTE: If we insert INSIDE the rail list container
+            if (insertBefore) {
+                targetParent.parentElement.insertBefore(wrapper, targetParent);
+            } else {
+                targetParent.parentElement.insertBefore(wrapper, targetParent.nextSibling);
+            }
+        } else if (rail) {
+            // Just append to rail
+            // Try to put it before the last item (Profile usually) if possible
+            if (rail.children.length > 1) {
+                rail.insertBefore(wrapper, rail.lastElementChild); 
+            } else {
                 rail.appendChild(wrapper);
             }
         }
@@ -173,7 +181,19 @@
         hideByContent('The best frontend for LLMs', 'div');
     }
 
-    // --- HELPERS --- //
+    // --- HELPERS (Fixed Selector) --- //
+    function hideByText(text) {
+        try {
+            const snapshot = document.evaluate(`//*[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            for (let i = 0; i < snapshot.snapshotLength; i++) {
+                const node = snapshot.snapshotItem(i);
+                // REMOVED .group from selector to avoid hiding parent containers
+                const container = node.closest('button, a, li, [role="button"]');
+                if (container) container.style.display = 'none';
+            }
+        } catch(e){}
+    }
+    
     function findElementByText(text) {
         const snapshot = document.evaluate(
             `//*[contains(text(), '${text}')] | //*[@aria-label='${text}']`,
@@ -182,6 +202,19 @@
         return snapshot.singleNodeValue;
     }
 
+    function hideByContent(text, selector = '*') {
+        try {
+            const snapshot = document.evaluate(`//${selector}[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            for (let i = 0; i < snapshot.snapshotLength; i++) {
+                const node = snapshot.snapshotItem(i);
+                if (node) {
+                     let p = node.parentElement;
+                     if(p) p.style.display = 'none';
+                }
+            }
+        } catch(e){}
+    }
+    
     function createModal() {
         if (document.getElementById('tm-tweaks-modal')) return;
         const modal = document.createElement('div');
@@ -189,7 +222,7 @@
         /* ... (Same Modal HTML) ... */
         modal.innerHTML = `
             <div class="tm-modal-content">
-                <div class="tm-header"><h2>✨ Tweaks V3.10</h2><button id="tm-close-btn">×</button></div>
+                <div class="tm-header"><h2>✨ Tweaks V3.11</h2><button id="tm-close-btn">×</button></div>
                 <div class="tm-section">
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
                     <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
@@ -223,31 +256,7 @@
         bind('col-theme','themeColor'); bind('col-user','userBubbleColor');
     }
 
-    function hideByText(text) {
-        try {
-            const snapshot = document.evaluate(`//*[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (let i = 0; i < snapshot.snapshotLength; i++) {
-                const node = snapshot.snapshotItem(i);
-                const container = node.closest('button, a, [role="button"], .group');
-                if (container) container.style.display = 'none';
-            }
-        } catch(e){}
-    }
-
-    function hideByContent(text, selector = '*') {
-        try {
-            const snapshot = document.evaluate(`//${selector}[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-            for (let i = 0; i < snapshot.snapshotLength; i++) {
-                const node = snapshot.snapshotItem(i);
-                if (node) {
-                     let p = node.parentElement;
-                     if(p) p.style.display = 'none';
-                }
-            }
-        } catch(e){}
-    }
-
     updateStyles();
     setInterval(runMonitor, 800);
-    console.log("🚀 V3.10 Loaded");
+    console.log("🚀 V3.11 Loaded");
 })();
