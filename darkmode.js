@@ -1,12 +1,12 @@
 /* 
-  TypingMind Tweaks V3.12 (Sparkle & Fail-Safe)
-  - Icon: ✨ (Distinguishable from Settings)
-  - Fail-Safe: Rail first, Floating backup
-  - Precision Hiding & High-Contrast Theme
+  TypingMind Tweaks V3.13 (Profile Anchor)
+  - Button Inserts ABOVE Profile Picture (High Stability)
+  - No Floating Fallback (Forces Bar Integration)
+  - Precision Hiding & Clean Theme
 */
 
 (function() {
-    console.log("🚀 V3.12 Sparkle Starting...");
+    console.log("🚀 V3.13 Profile-Anchor Starting...");
 
     // --- CONFIG --- //
     const STORAGE_KEY = 'TM_TWEAKS_CONFIG';
@@ -49,14 +49,16 @@
             #tm-close-btn { background:none; border:none; color:#666; cursor:pointer; font-size: 24px;}
 
             /* --- HIDING --- */
+            /* Hide the container of the voice button */
+            body:has([data-element-id="voice-input-button"]) [data-element-id="voice-input-button"] { display: none !important; }
             ${config.hideAudio ? `[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }` : ''}
-            ${config.hideProfile ? `[data-element-id="workspace-profile-button"] { display: none !important; }` : ''}
+            
+            /* Hide Profile logic handled by script to avoid breakage */
 
             /* --- THEME --- */
             [data-is-user="true"] .prose, .bg-blue-600 { background-color: ${config.userBubbleColor} !important; }
 
             ${config.enableBorderTheme ? `
-                /* 1. NUCLEAR BLACK BACKGROUNDS */
                 html.dark body, html.dark main, 
                 html.dark [data-element-id="side-bar-body"],
                 html.dark [data-element-id="side-bar-nav-rail"],
@@ -67,104 +69,75 @@
                 html.dark .bg-zinc-800, html.dark .bg-gray-800
                 { background-color: #000000 !important; }
 
-                /* 2. LAYOUT OUTLINES */
-                [data-element-id="side-bar-body"], [data-element-id="side-bar-nav-rail"] { 
-                    border-right: 1px solid ${themeC}${borderAlpha} !important; 
-                }
-                header, [data-element-id="chat-space-header"] { 
-                    border-bottom: 1px solid ${themeC}${borderAlpha} !important; 
-                }
+                /* Layout Outlines */
+                [data-element-id="side-bar-body"], [data-element-id="side-bar-nav-rail"] { border-right: 1px solid ${themeC}${borderAlpha} !important; }
+                header, [data-element-id="chat-space-header"] { border-bottom: 1px solid ${themeC}${borderAlpha} !important; }
 
-                /* 3. CONTENT OUTLINES */
-                [data-element-id="chat-input-area"] { 
-                    background-color: #000 !important; 
-                    border: 1px solid rgba(255,255,255,0.2) !important; 
-                    border-radius: 8px !important;
-                }
-                [data-element-id="response-block"] > div > div.prose,
-                [data-is-user="true"] .prose {
-                    border: 1px solid rgba(255,255,255,0.15) !important;
-                    border-radius: 6px !important;
-                    padding: 8px 12px !important; 
-                }
+                /* Content Outlines */
+                [data-element-id="chat-input-area"] { background-color: #000 !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 8px !important; }
+                [data-element-id="response-block"] > div > div.prose, [data-is-user="true"] .prose { border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 6px !important; padding: 8px 12px !important; }
                 
-                /* 4. NEW CHAT BUTTON (Solid Match) */
-                [data-element-id="new-chat-button-in-side-bar"] {
-                    background-color: ${config.userBubbleColor} !important;
-                    border: 1px solid rgba(255,255,255,0.2) !important;
-                    color: #fff !important;
-                }
-                [data-element-id="new-chat-button-in-side-bar"]:hover {
-                    filter: brightness(1.2);
-                }
+                /* New Chat Button */
+                [data-element-id="new-chat-button-in-side-bar"] { background-color: ${config.userBubbleColor} !important; border: 1px solid rgba(255,255,255,0.2) !important; color: #fff !important; }
             ` : ''}
         `;
     }
 
-    // --- BUTTON LOGIC (Fail-Safe) --- //
-    function getOrCreateButton() {
-        let btn = document.getElementById('tm-integrated-btn');
-        if (!btn) {
-            btn = document.createElement('button');
-            btn.id = 'tm-integrated-btn';
-            btn.innerHTML = '✨'; // NEW ICON
-            btn.title = 'Tweaks';   // NEW TITLE
-            btn.onclick = (e) => {
+    // --- BUTTON INJECTION (ANCHOR STRATEGY) --- //
+    function injectButton() {
+        if (document.getElementById('tm-integrated-btn')) return;
+
+        // TARGET: The User Profile Button
+        // It uses data-element-id="workspace-profile-button"
+        const profileBtn = document.querySelector('[data-element-id="workspace-profile-button"]');
+        
+        let targetContainer = null;
+        let referenceNode = null;
+
+        if (profileBtn) {
+            // Found it! We want to be inside its parent, inserted BEFORE it.
+            // Check if profileBtn is wrapped in a div.group
+            const wrapper = profileBtn.closest('div.group') || profileBtn.parentElement;
+            
+            if (wrapper && wrapper.parentElement) {
+                targetContainer = wrapper.parentElement;
+                referenceNode = wrapper; // Insert BEFORE the profile wrapper
+            }
+        } else {
+            // Fallback: Sidebar Nav Rail (Append to end)
+            const rail = document.querySelector('[data-element-id="side-bar-nav-rail"]');
+            if(rail) {
+                targetContainer = rail;
+                referenceNode = null; // Append
+            }
+        }
+
+        if (targetContainer) {
+            const btnDiv = document.createElement('div');
+            btnDiv.id = 'tm-integrated-btn';
+            btnDiv.className = 'group flex items-center justify-center py-2 cursor-pointer text-gray-400 hover:text-white transition-colors';
+            // Mimic the Sidebar Item Structure
+            btnDiv.innerHTML = `
+                <button style="background:none; border:none; padding:10px; cursor:pointer;" title="Tweaks">
+                    <span style="font-size:20px;">✨</span>
+                </button>
+            `;
+            btnDiv.onclick = (e) => {
                 e.stopPropagation();
                 createModal();
                 document.getElementById('tm-tweaks-modal').style.display = 'flex';
             };
-            // Default "Native" Style
-            btn.className = 'group flex items-center justify-center py-3 text-gray-500 hover:text-white transition-colors cursor-pointer';
-            btn.style.fontSize = '20px';
-            btn.style.width = '100%'; 
-            btn.style.background = 'transparent';
-            btn.style.border = 'none';
-        }
-        return btn;
-    }
 
-    function injectButton() {
-        const btn = getOrCreateButton();
-        const rail = document.querySelector('[data-element-id="side-bar-nav-rail"]');
-        
-        // 1. Try Sidebar Injection
-        if (rail && rail.offsetParent !== null) { // Check if visible
-            if (rail.contains(btn) && btn.style.position !== 'fixed') return;
-
-            // Reset to Native Style
-            btn.style.cssText = ''; 
-            btn.className = 'group flex items-center justify-center py-3 text-gray-500 hover:text-white transition-colors cursor-pointer';
-            btn.style.fontSize = '20px'; // Re-apply font size
-            
-            rail.appendChild(btn);
-            console.log("✅ Button injected into Rail");
-            return;
-        } 
-
-        // 2. Fail-Safe: Float Logic
-        if (btn.parentElement !== document.body) {
-             document.body.appendChild(btn);
-        }
-        
-        if (btn.style.position !== 'fixed') {
-            console.log("⚠️ Rail inaccessible. Acting as Floating Button.");
-            btn.className = ''; // Remove tailwind classes
-            btn.style.position = 'fixed';
-            btn.style.bottom = '20px';
-            btn.style.left = '20px';
-            btn.style.width = '40px';
-            btn.style.height = '40px';
-            btn.style.background = 'rgba(0,0,0,0.8)';
-            btn.style.border = `1px solid ${config.themeColor}`;
-            btn.style.borderRadius = '50%';
-            btn.style.zIndex = '999999';
-            btn.style.cursor = 'pointer';
-            btn.style.display = 'flex';
-            btn.style.justifyContent = 'center';
-            btn.style.alignItems = 'center';
-            btn.style.fontSize = '20px';
-            btn.style.boxShadow = `0 0 10px ${config.themeColor}40`;
+            // INJECT
+            if (referenceNode) {
+                targetContainer.insertBefore(btnDiv, referenceNode);
+                console.log("✅ Button injected ABOVE Profile");
+            } else {
+                targetContainer.appendChild(btnDiv);
+                console.log("✅ Button appended to Rail");
+            }
+        } else {
+            console.log("⚠️ Could not find injection target (Profile or Rail)");
         }
     }
 
@@ -175,6 +148,15 @@
         if (config.hideTeams) hideByText('Teams');
         if (config.hideKB) { hideByText('Knowledge Base'); hideByText('KB'); }
         if (config.hidePrompts) { hideByText('List more'); hideByText('Prompts'); }
+        if (config.hideProfile) {
+             // We can't display:none the profile button directly if we use it as an anchor, 
+             // but we can hide the wrapper visually.
+             const p = document.querySelector('[data-element-id="workspace-profile-button"]');
+             if(p) {
+                 const w = p.closest('div.group') || p.parentElement;
+                 if(w) w.style.display = 'none';
+             }
+        }
         
         hideByContent('TypingMind', 'h1, .text-4xl');
         hideByContent('Your AI agents', 'div');
@@ -208,9 +190,10 @@
         if (document.getElementById('tm-tweaks-modal')) return;
         const modal = document.createElement('div');
         modal.id = 'tm-tweaks-modal';
+        /* (Modal Content Same) */
         modal.innerHTML = `
             <div class="tm-modal-content">
-                <div class="tm-header"><h2>✨ Tweaks V3.12</h2><button id="tm-close-btn">×</button></div>
+                <div class="tm-header"><h2>✨ Tweaks V3.13</h2><button id="tm-close-btn">×</button></div>
                 <div class="tm-section">
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
                     <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
@@ -246,5 +229,5 @@
 
     updateStyles();
     setInterval(runMonitor, 800);
-    console.log("🚀 V3.12 Loaded");
+    console.log("🚀 V3.13 Loaded");
 })();
