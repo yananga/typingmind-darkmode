@@ -2,15 +2,15 @@
   TypingMind Tweaks V3.18 (Minimal)
   - Hardcoded: Hide Teams, KB, Audio
   - Theme: "Void" (Black) + Schematic Borders
-  - Colors: Light Blue Bubbles & New Chat Button
+  - Colors: CYAN Bubbles & New Chat Button
   - NO Settings Button
 */
 
 (function() {
     console.log("🚀 V3.18 Minimal Starting...");
 
-    const THEME_COLOR = '#3b82f6'; // Light Blue
-    const BUBBLE_COLOR = '#2563eb';
+    const THEME_COLOR = '#06b6d4'; // Cyan (from your screenshot)
+    const BUBBLE_COLOR = '#06b6d4';
 
     // --- INJECT STYLES --- //
     const style = document.createElement('style');
@@ -93,7 +93,6 @@
         } catch(e){}
     }
 
-    // Run on mutations (for SPA reloads)
     const observer = new MutationObserver(hideKB);
     observer.observe(document.body, { childList: true, subtree: true });
     
