@@ -1,12 +1,12 @@
 /* 
-  TypingMind Tweaks V3.13 (Profile Anchor)
-  - Button Inserts ABOVE Profile Picture (High Stability)
-  - No Floating Fallback (Forces Bar Integration)
-  - Precision Hiding & Clean Theme
+  TypingMind Tweaks V3.15 (Original Method)
+  - Injection: Anchors to Native Settings Button (Robust)
+  - Theme: "The Void" (Black + Schematic Borders)
+  - Style: Native Class Cloning
 */
 
 (function() {
-    console.log("🚀 V3.13 Profile-Anchor Starting...");
+    console.log("🚀 V3.15 'Original' Logic Starting...");
 
     // --- CONFIG --- //
     const STORAGE_KEY = 'TM_TWEAKS_CONFIG';
@@ -25,7 +25,7 @@
         updateStyles();
     }
 
-    // --- CSS GENERATOR --- //
+    // --- CSS GENERATOR (The Void Theme) --- //
     function updateStyles() {
         const styleId = 'tm-tweaks-style';
         let style = document.getElementById(styleId);
@@ -49,12 +49,9 @@
             #tm-close-btn { background:none; border:none; color:#666; cursor:pointer; font-size: 24px;}
 
             /* --- HIDING --- */
-            /* Hide the container of the voice button */
             body:has([data-element-id="voice-input-button"]) [data-element-id="voice-input-button"] { display: none !important; }
             ${config.hideAudio ? `[data-element-id="voice-input-button"], button[aria-label="Voice Input"] { display: none !important; }` : ''}
             
-            /* Hide Profile logic handled by script to avoid breakage */
-
             /* --- THEME --- */
             [data-is-user="true"] .prose, .bg-blue-600 { background-color: ${config.userBubbleColor} !important; }
 
@@ -72,8 +69,8 @@
                 /* Layout Outlines */
                 [data-element-id="side-bar-body"], [data-element-id="side-bar-nav-rail"] { border-right: 1px solid ${themeC}${borderAlpha} !important; }
                 header, [data-element-id="chat-space-header"] { border-bottom: 1px solid ${themeC}${borderAlpha} !important; }
-
-                /* Content Outlines */
+                
+                /* Input & Content */
                 [data-element-id="chat-input-area"] { background-color: #000 !important; border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 8px !important; }
                 [data-element-id="response-block"] > div > div.prose, [data-is-user="true"] .prose { border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 6px !important; padding: 8px 12px !important; }
                 
@@ -83,93 +80,12 @@
         `;
     }
 
-    // --- BUTTON INJECTION (ANCHOR STRATEGY) --- //
-    function injectButton() {
-        if (document.getElementById('tm-integrated-btn')) return;
-
-        // TARGET: The User Profile Button
-        // It uses data-element-id="workspace-profile-button"
-        const profileBtn = document.querySelector('[data-element-id="workspace-profile-button"]');
-        
-        let targetContainer = null;
-        let referenceNode = null;
-
-        if (profileBtn) {
-            // Found it! We want to be inside its parent, inserted BEFORE it.
-            // Check if profileBtn is wrapped in a div.group
-            const wrapper = profileBtn.closest('div.group') || profileBtn.parentElement;
-            
-            if (wrapper && wrapper.parentElement) {
-                targetContainer = wrapper.parentElement;
-                referenceNode = wrapper; // Insert BEFORE the profile wrapper
-            }
-        } else {
-            // Fallback: Sidebar Nav Rail (Append to end)
-            const rail = document.querySelector('[data-element-id="side-bar-nav-rail"]');
-            if(rail) {
-                targetContainer = rail;
-                referenceNode = null; // Append
-            }
-        }
-
-        if (targetContainer) {
-            const btnDiv = document.createElement('div');
-            btnDiv.id = 'tm-integrated-btn';
-            btnDiv.className = 'group flex items-center justify-center py-2 cursor-pointer text-gray-400 hover:text-white transition-colors';
-            // Mimic the Sidebar Item Structure
-            btnDiv.innerHTML = `
-                <button style="background:none; border:none; padding:10px; cursor:pointer;" title="Tweaks">
-                    <span style="font-size:20px;">✨</span>
-                </button>
-            `;
-            btnDiv.onclick = (e) => {
-                e.stopPropagation();
-                createModal();
-                document.getElementById('tm-tweaks-modal').style.display = 'flex';
-            };
-
-            // INJECT
-            if (referenceNode) {
-                targetContainer.insertBefore(btnDiv, referenceNode);
-                console.log("✅ Button injected ABOVE Profile");
-            } else {
-                targetContainer.appendChild(btnDiv);
-                console.log("✅ Button appended to Rail");
-            }
-        } else {
-            console.log("⚠️ Could not find injection target (Profile or Rail)");
-        }
-    }
-
-    // --- MONITOR --- //
-    function runMonitor() {
-        injectButton();
-
-        if (config.hideTeams) hideByText('Teams');
-        if (config.hideKB) { hideByText('Knowledge Base'); hideByText('KB'); }
-        if (config.hidePrompts) { hideByText('List more'); hideByText('Prompts'); }
-        if (config.hideProfile) {
-             // We can't display:none the profile button directly if we use it as an anchor, 
-             // but we can hide the wrapper visually.
-             const p = document.querySelector('[data-element-id="workspace-profile-button"]');
-             if(p) {
-                 const w = p.closest('div.group') || p.parentElement;
-                 if(w) w.style.display = 'none';
-             }
-        }
-        
-        hideByContent('TypingMind', 'h1, .text-4xl');
-        hideByContent('Your AI agents', 'div');
-        hideByContent('The best frontend for LLMs', 'div');
-    }
-
-    /* --- HELPERS --- */
+    // --- HELPER: Hiding --- //
     function hideByText(text) {
         try {
             const snapshot = document.evaluate(`//*[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
             for (let i = 0; i < snapshot.snapshotLength; i++) {
                 const node = snapshot.snapshotItem(i);
-                // Strict interactive targets only
                 const container = node.closest('button, a, li[role="button"]');
                 if (container) container.style.display = 'none';
             }
@@ -185,15 +101,76 @@
             }
         } catch(e){}
     }
-    
+
+    // --- MAIN LOGIC (Mirrored from Original Script) --- //
+    function applyTweaks() {
+        const workspaceBar = document.querySelector('div[data-element-id="workspace-bar"]');
+        if (!workspaceBar) return;
+
+        // 1. Hiding Logic
+        if (config.hideTeams) hideByText('Teams');
+        if (config.hideKB) { hideByText('Knowledge Base'); hideByText('KB'); }
+        if (config.hidePrompts) { hideByText('List more'); hideByText('Prompts'); }
+        hideByContent('TypingMind', 'h1, .text-4xl');
+        hideByContent('Your AI agents', 'div');
+
+        // 2. Button Injection
+        let tweaksButton = document.getElementById("workspace-tab-tweaks");
+        const settingsButton = workspaceBar.querySelector('button[data-element-id="workspace-tab-settings"]');
+        
+        // Find a reference button to clone styles from (Sync or Profile)
+        const syncButton = workspaceBar.querySelector('button[data-element-id="workspace-tab-cloudsync"]');
+        const profileButton = document.querySelector('button[data-element-id="workspace-profile-button"]');
+        const styleReferenceButton = syncButton || profileButton;
+
+        // Only inject if we have a reference and the settings button (anchor)
+        if (!tweaksButton && settingsButton && styleReferenceButton) {
+            tweaksButton = document.createElement("button");
+            tweaksButton.id = "workspace-tab-tweaks";
+            tweaksButton.title = "Tweaks";
+            tweaksButton.className = styleReferenceButton.className; // CLONE CLASS
+            
+            const outerSpan = document.createElement("span");
+            const styleRefSpan = styleReferenceButton.querySelector(":scope > span");
+            if (styleRefSpan) outerSpan.className = styleRefSpan.className;
+
+            const iconDiv = document.createElement("div");
+            const styleRefIconDiv = styleReferenceButton.querySelector(":scope > span > div");
+            if (styleRefIconDiv) iconDiv.className = styleRefIconDiv.className;
+            
+            // Icon (Star/Sparkles)
+            iconDiv.innerHTML = `<span style="font-size: 1.2rem;">✨</span>`;
+            
+            // Text Label
+            const textSpan = document.createElement("span");
+            textSpan.className = "font-normal self-stretch text-center text-xs leading-4 md:leading-none";
+            textSpan.textContent = "Tweaks";
+
+            // Assembly
+            outerSpan.appendChild(iconDiv);
+            outerSpan.appendChild(textSpan);
+            tweaksButton.appendChild(outerSpan);
+
+            tweaksButton.onclick = (e) => {
+                e.preventDefault(); e.stopPropagation();
+                createModal();
+                document.getElementById('tm-tweaks-modal').style.display = 'flex';
+            };
+
+            // Insertion (The Critical Bit)
+            settingsButton.parentNode.insertBefore(tweaksButton, settingsButton);
+            console.log("✅ V3.15: Tweaks button injected before Settings");
+        }
+    }
+
+    /* --- MODAL (Same as before) --- */
     function createModal() {
         if (document.getElementById('tm-tweaks-modal')) return;
         const modal = document.createElement('div');
         modal.id = 'tm-tweaks-modal';
-        /* (Modal Content Same) */
         modal.innerHTML = `
             <div class="tm-modal-content">
-                <div class="tm-header"><h2>✨ Tweaks V3.13</h2><button id="tm-close-btn">×</button></div>
+                <div class="tm-header"><h2>✨ Tweaks V3.15</h2><button id="tm-close-btn">×</button></div>
                 <div class="tm-section">
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
                     <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
@@ -209,25 +186,36 @@
                 <div class="tm-footer"><button id="tm-save-close">Save & Apply</button></div>
             </div>`;
         document.body.appendChild(modal);
-
+        
+        // Event Listeners (Close, Save, Load)
         const close = () => modal.style.display = 'none';
         document.getElementById('tm-close-btn').onclick = close;
         document.getElementById('tm-save-close').onclick = () => { saveConfig(); close(); };
-        
+
         const load = (id, k) => { const el = document.getElementById(id); if(el) el[id.includes('chk')?'checked':'value'] = config[k]; };
         load('chk-teams','hideTeams'); load('chk-kb','hideKB'); 
         load('chk-prompts','hidePrompts'); load('chk-audio','hideAudio');
-        load('chk-profile','hideProfile'); load('chk-border','enableBorderTheme');
+        load('chk-profile','hideProfile'); load('chk-border','enableBorderTheme'); 
         load('col-theme','themeColor'); load('col-user','userBubbleColor');
 
         const bind = (id, k) => { const el = document.getElementById(id); if(el) el.onchange = (e) => config[k] = e.target[id.includes('chk')?'checked':'value']; };
         bind('chk-teams','hideTeams'); bind('chk-kb','hideKB');
         bind('chk-prompts','hidePrompts'); bind('chk-audio','hideAudio');
-        bind('chk-profile','hideProfile'); bind('chk-border','enableBorderTheme');
+        bind('chk-profile','hideProfile'); bind('chk-border','enableBorderTheme'); 
         bind('col-theme','themeColor'); bind('col-user','userBubbleColor');
     }
 
+    // --- INITIALIZATION --- //
     updateStyles();
-    setInterval(runMonitor, 800);
-    console.log("🚀 V3.13 Loaded");
+    
+    // Use MutationObserver for robust injection
+    const observer = new MutationObserver(() => {
+        applyTweaks();
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Initial Run
+    setTimeout(applyTweaks, 500); 
+    console.log("🚀 V3.15 Loaded (Original Logic)");
 })();
