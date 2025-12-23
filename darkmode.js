@@ -1,13 +1,12 @@
 /* 
-  TypingMind Tweaks V3.11 (Precision Mode)
-  - Fixed "Disappearing Sidebar" Bug
-  - Solid "New Chat" Button
-  - Native Settings Injection
-  - "Schematic" Outlines
+  TypingMind Tweaks V3.12 (Sparkle & Fail-Safe)
+  - Icon: ✨ (Distinguishable from Settings)
+  - Fail-Safe: Rail first, Floating backup
+  - Precision Hiding & High-Contrast Theme
 */
 
 (function() {
-    console.log("🚀 V3.11 Precision Starting...");
+    console.log("🚀 V3.12 Sparkle Starting...");
 
     // --- CONFIG --- //
     const STORAGE_KEY = 'TM_TWEAKS_CONFIG';
@@ -66,9 +65,7 @@
                 html.dark header,
                 html.dark .bg-zinc-900, html.dark .bg-gray-900, 
                 html.dark .bg-zinc-800, html.dark .bg-gray-800
-                {
-                    background-color: #000000 !important;
-                }
+                { background-color: #000000 !important; }
 
                 /* 2. LAYOUT OUTLINES */
                 [data-element-id="side-bar-body"], [data-element-id="side-bar-nav-rail"] { 
@@ -78,7 +75,7 @@
                     border-bottom: 1px solid ${themeC}${borderAlpha} !important; 
                 }
 
-                /* 3. CONTENT OUTLINES (Fixed) */
+                /* 3. CONTENT OUTLINES */
                 [data-element-id="chat-input-area"] { 
                     background-color: #000 !important; 
                     border: 1px solid rgba(255,255,255,0.2) !important; 
@@ -104,73 +101,76 @@
         `;
     }
 
-    // --- BUTTON INJECTION --- //
-    function updateRailButton() {
-        if (document.getElementById('tm-integrated-btn')) return;
-
-        // Try to find Settings to anchor
-        // We look for text OR typical aria labels
-        const settingsBtn = findElementByText('Settings') || findElementByText('Preferences');
-        
-        let targetParent = null;
-        let insertBefore = false;
-
-        if (settingsBtn) {
-            // Anchor after settings
-            targetParent = settingsBtn.closest('div.group') || settingsBtn.parentElement;
-        } 
-        
-        if (!targetParent) {
-            // Fallback: Use the profile button
-            const profile = document.querySelector('[data-element-id="workspace-profile-button"]');
-            if (profile) {
-                targetParent = profile.closest('div') || profile.parentElement;
-                insertBefore = true; // Put BEFORE profile if we can't find settings
-            }
+    // --- BUTTON LOGIC (Fail-Safe) --- //
+    function getOrCreateButton() {
+        let btn = document.getElementById('tm-integrated-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'tm-integrated-btn';
+            btn.innerHTML = '✨'; // NEW ICON
+            btn.title = 'Tweaks';   // NEW TITLE
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                createModal();
+                document.getElementById('tm-tweaks-modal').style.display = 'flex';
+            };
+            // Default "Native" Style
+            btn.className = 'group flex items-center justify-center py-3 text-gray-500 hover:text-white transition-colors cursor-pointer';
+            btn.style.fontSize = '20px';
+            btn.style.width = '100%'; 
+            btn.style.background = 'transparent';
+            btn.style.border = 'none';
         }
+        return btn;
+    }
 
-        // Final Fallback: The Rail itself
+    function injectButton() {
+        const btn = getOrCreateButton();
         const rail = document.querySelector('[data-element-id="side-bar-nav-rail"]');
-
-        // Create Button
-        const wrapper = document.createElement('div');
-        wrapper.id = 'tm-integrated-btn';
-        wrapper.className = 'flex items-center justify-center py-2 mt-1 cursor-pointer group';
         
-        const btn = document.createElement('button');
-        btn.innerHTML = '⚙️'; 
-        btn.className = 'text-gray-400 hover:text-white transition-colors';
-        btn.style.cssText = 'background:none; border:none; font-size:20px; opacity:0.8;';
-        btn.onclick = (e) => {
-            e.stopPropagation();
-            createModal();
-            document.getElementById('tm-tweaks-modal').style.display = 'flex';
-        };
-        wrapper.appendChild(btn);
+        // 1. Try Sidebar Injection
+        if (rail && rail.offsetParent !== null) { // Check if visible
+            if (rail.contains(btn) && btn.style.position !== 'fixed') return;
 
-        // Inject
-        if (targetParent && targetParent.parentElement && !rail) {
-            // We found a specific item (Settings), insert relative to it
-            // NOTE: If we insert INSIDE the rail list container
-            if (insertBefore) {
-                targetParent.parentElement.insertBefore(wrapper, targetParent);
-            } else {
-                targetParent.parentElement.insertBefore(wrapper, targetParent.nextSibling);
-            }
-        } else if (rail) {
-            // Just append to rail
-            // Try to put it before the last item (Profile usually) if possible
-            if (rail.children.length > 1) {
-                rail.insertBefore(wrapper, rail.lastElementChild); 
-            } else {
-                rail.appendChild(wrapper);
-            }
+            // Reset to Native Style
+            btn.style.cssText = ''; 
+            btn.className = 'group flex items-center justify-center py-3 text-gray-500 hover:text-white transition-colors cursor-pointer';
+            btn.style.fontSize = '20px'; // Re-apply font size
+            
+            rail.appendChild(btn);
+            console.log("✅ Button injected into Rail");
+            return;
+        } 
+
+        // 2. Fail-Safe: Float Logic
+        if (btn.parentElement !== document.body) {
+             document.body.appendChild(btn);
+        }
+        
+        if (btn.style.position !== 'fixed') {
+            console.log("⚠️ Rail inaccessible. Acting as Floating Button.");
+            btn.className = ''; // Remove tailwind classes
+            btn.style.position = 'fixed';
+            btn.style.bottom = '20px';
+            btn.style.left = '20px';
+            btn.style.width = '40px';
+            btn.style.height = '40px';
+            btn.style.background = 'rgba(0,0,0,0.8)';
+            btn.style.border = `1px solid ${config.themeColor}`;
+            btn.style.borderRadius = '50%';
+            btn.style.zIndex = '999999';
+            btn.style.cursor = 'pointer';
+            btn.style.display = 'flex';
+            btn.style.justifyContent = 'center';
+            btn.style.alignItems = 'center';
+            btn.style.fontSize = '20px';
+            btn.style.boxShadow = `0 0 10px ${config.themeColor}40`;
         }
     }
 
     // --- MONITOR --- //
     function runMonitor() {
-        updateRailButton();
+        injectButton();
 
         if (config.hideTeams) hideByText('Teams');
         if (config.hideKB) { hideByText('Knowledge Base'); hideByText('KB'); }
@@ -181,36 +181,25 @@
         hideByContent('The best frontend for LLMs', 'div');
     }
 
-    // --- HELPERS (Fixed Selector) --- //
+    /* --- HELPERS --- */
     function hideByText(text) {
         try {
             const snapshot = document.evaluate(`//*[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
             for (let i = 0; i < snapshot.snapshotLength; i++) {
                 const node = snapshot.snapshotItem(i);
-                // REMOVED .group from selector to avoid hiding parent containers
-                const container = node.closest('button, a, li, [role="button"]');
+                // Strict interactive targets only
+                const container = node.closest('button, a, li[role="button"]');
                 if (container) container.style.display = 'none';
             }
         } catch(e){}
     }
     
-    function findElementByText(text) {
-        const snapshot = document.evaluate(
-            `//*[contains(text(), '${text}')] | //*[@aria-label='${text}']`,
-            document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
-        );
-        return snapshot.singleNodeValue;
-    }
-
     function hideByContent(text, selector = '*') {
         try {
             const snapshot = document.evaluate(`//${selector}[contains(text(), '${text}')]`, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
             for (let i = 0; i < snapshot.snapshotLength; i++) {
                 const node = snapshot.snapshotItem(i);
-                if (node) {
-                     let p = node.parentElement;
-                     if(p) p.style.display = 'none';
-                }
+                if (node && node.parentElement) node.parentElement.style.display = 'none';
             }
         } catch(e){}
     }
@@ -219,10 +208,9 @@
         if (document.getElementById('tm-tweaks-modal')) return;
         const modal = document.createElement('div');
         modal.id = 'tm-tweaks-modal';
-        /* ... (Same Modal HTML) ... */
         modal.innerHTML = `
             <div class="tm-modal-content">
-                <div class="tm-header"><h2>✨ Tweaks V3.11</h2><button id="tm-close-btn">×</button></div>
+                <div class="tm-header"><h2>✨ Tweaks V3.12</h2><button id="tm-close-btn">×</button></div>
                 <div class="tm-section">
                     <label><input type="checkbox" id="chk-teams"> Hide Teams</label>
                     <label><input type="checkbox" id="chk-kb"> Hide Knowledge Base</label>
@@ -258,5 +246,5 @@
 
     updateStyles();
     setInterval(runMonitor, 800);
-    console.log("🚀 V3.11 Loaded");
+    console.log("🚀 V3.12 Loaded");
 })();
